@@ -31,20 +31,5 @@ group by p.id
 having avg(pr.rating) >= 4;
 ;
 
-SELECT properties.*, avg(property_reviews.rating) as average_rating
-  FROM properties
-  JOIN property_reviews ON properties.id = property_id
-  WHERE city LIKE '%Vancouver%' AND properties.owner_id = 554
-  GROUP BY properties.id
-  ORDER BY cost_per_night
-  LIMIT 3;
-
-  SELECT properties.*, avg(property_reviews.rating) as average_rating
-  FROM properties
-  JOIN property_reviews ON properties.id = property_id
-  WHERE city LIKE $1 AND properties.owner_id = $2 AND properties.cost_per_night >= $3 AND properties.cost_per_night <= $4
-  GROUP BY properties.id
-  ORDER BY cost_per_night
-  LIMIT $5;
 
 
