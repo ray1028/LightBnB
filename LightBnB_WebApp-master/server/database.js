@@ -20,6 +20,7 @@ const getUserWithEmail = function(email) {
   return pool
     .query(`select * from users where email = $1 limit 1;`, [email])
     .then(res => {
+      console.log(res);
       if (res.rowCount !== 1) {
         throw new Error(`The email ${email} does not exist`);
       } else {
@@ -110,15 +111,42 @@ exports.getAllReservations = getAllReservations;
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function(options, limit = 10) {
-  return pool
-    .query(
-      `
-  SELECT * FROM properties
-  LIMIT $1
-  `,
-      [limit]
-    )
-    .then(res => res.rows);
+  // testing data
+  // options.city = 'Paradise';
+  // options.owner_id = 391;
+  // options.minimum_price_per_night = 10;
+  // options.maximum_price_per_night = 100000;
+  // options.minimum_rating = 1;
+
+  const queryParams = [];
+
+  let queryString = `
+  SELECT properties.*, avg(property_reviews.rating) as average_rating
+  FROM properties
+  JOIN property_reviews ON properties.id = property_id
+  `;
+
+  try{
+    `${options.city ? (queryParams.push(`${options.city}`), queryString += `WHERE properties.city LIKE $${queryParams.length} `) : ''}`;
+    `${options.owner_id ? (queryParams.push(`${options.owner_id}`), queryString +=  `AND properties.owner_id = $${queryParams.length}`) : ''}`;
+    `${options.minimum_price_per_night ? (queryParams.push(`${options.minimum_price_per_night}`), queryString +=  ` AND properties.cost_per_night >= $${queryParams.length}`) : ''}`;
+    `${options.maximum_price_per_night ? (queryParams.push(`${options.maximum_price_per_night}`), queryString +=  ` AND properties.cost_per_night <= $${queryParams.length}`) : ''}`;
+    `${options.maximum_price_per_night ? (queryParams.push(`${options.maximum_price_per_night}`), queryString +=  ` AND properties.cost_per_night <= $${queryParams.length}`) : ''}`;
+    `${options.minimum_rating ? (queryParams.push(`${options.minimum_rating}`), queryString +=  ` AND property_reviews.rating >= $${queryParams.length}`) : ''}`;
+  } catch(error){
+    throw new Error('SQL Query Error ' + error);
+  }
+  
+  queryParams.push(limit);
+  queryString += `
+  GROUP BY properties.id
+  ORDER BY cost_per_night
+  LIMIT $${queryParams.length};
+  `;
+
+  return pool.query(queryString, queryParams)
+  .then(res => res.rows)
+  .catch(err => err);
 };
 exports.getAllProperties = getAllProperties;
 
